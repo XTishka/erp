@@ -30,6 +30,7 @@ class DocumentDefaultFactory extends Factory
         return [
             'company_id' => 1,
             'payment_terms' => 'due_upon_receipt',
+            'payment_details' => null,
         ];
     }
 

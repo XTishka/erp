@@ -21,6 +21,7 @@ readonly class DocumentDTO
         public ?string $subheader,
         public ?string $footer,
         public ?string $terms,
+        public array $paymentDetails = [],
         public ?string $logo,
         public string $number,
         public ?string $referenceNumber,
@@ -72,6 +73,7 @@ readonly class DocumentDTO
             subheader: $document->subheader,
             footer: $document->footer,
             terms: $document->terms,
+            paymentDetails: self::formatPaymentDetails($settings->payment_details),
             logo: $document->logo_url ?? $settings->logo_url,
             number: $document->documentNumber(),
             referenceNumber: $document->referenceNumber(),
@@ -102,5 +104,28 @@ readonly class DocumentDTO
     public function getFontHtml(): Htmlable
     {
         return app(BunnyFontProvider::class)->getHtml($this->font->getLabel());
+    }
+
+    /**
+     * @param  iterable<int, array<string, mixed>>|null  $details
+     * @return PaymentDetailDTO[]
+     */
+    protected static function formatPaymentDetails(mixed $details): array
+    {
+        if ($details === null) {
+            return [];
+        }
+
+        return collect($details)
+            ->map(static function ($detail): ?PaymentDetailDTO {
+                if (! is_array($detail)) {
+                    $detail = (array) $detail;
+                }
+
+                return PaymentDetailDTO::fromArray($detail);
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 }

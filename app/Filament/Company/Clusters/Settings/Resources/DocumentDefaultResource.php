@@ -11,6 +11,8 @@ use App\Filament\Company\Clusters\Settings;
 use App\Filament\Company\Clusters\Settings\Resources\DocumentDefaultResource\Pages;
 use App\Filament\Forms\Components\DocumentPreview;
 use App\Models\Setting\DocumentDefault;
+use Awcodes\TableRepeater\Components\TableRepeater;
+use Awcodes\TableRepeater\Header;
 use Filament\Forms;
 use Filament\Forms\Components\Component;
 use Filament\Forms\Form;
@@ -71,6 +73,30 @@ class DocumentDefaultResource extends Resource
                 Forms\Components\Textarea::make('terms')
                     ->localizeLabel()
                     ->nullable(),
+                TableRepeater::make('payment_details')
+                    ->label('Payment details')
+                    ->helperText('Share bank accounts, IBAN, or payout instructions. Leave blank rows empty to exclude them.')
+                    ->schema([
+                        Forms\Components\TextInput::make('label')
+                            ->label('Label')
+                            ->maxLength(100),
+                        Forms\Components\TextInput::make('value')
+                            ->label('Value')
+                            ->maxLength(255),
+                    ])
+                    ->columnSpanFull()
+                    ->default([])
+                    ->defaultItems(0)
+                    ->addActionLabel('Add payment line')
+                    ->streamlined()
+                    ->stackAt('md')
+                    ->headers([
+                        Header::make('label')
+                            ->label('Label')
+                            ->width('30%'),
+                        Header::make('value')
+                            ->label('Value'),
+                    ]),
                 Forms\Components\Textarea::make('footer')
                     ->localizeLabel('Footer')
                     ->nullable(),

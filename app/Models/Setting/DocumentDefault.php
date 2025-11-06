@@ -38,6 +38,7 @@ class DocumentDefault extends Model
         'header',
         'subheader',
         'terms',
+        'payment_details',
         'footer',
         'accent_color',
         'font',
@@ -61,6 +62,7 @@ class DocumentDefault extends Model
         'unit_name' => AsArrayObject::class,
         'price_name' => AsArrayObject::class,
         'amount_name' => AsArrayObject::class,
+        'payment_details' => AsArrayObject::class,
     ];
 
     protected $appends = [

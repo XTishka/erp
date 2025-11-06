@@ -146,8 +146,24 @@
     </x-company.document-template.line-items>
 
     <!-- Footer -->
-    <x-company.document-template.footer class="classic-template-footer p-6 text-sm">
-        <h4 class="font-semibold mb-2">Terms & Conditions</h4>
-        <p class="break-words line-clamp-4">{{ $document->terms }}</p>
+    <x-company.document-template.footer class="classic-template-footer p-6 text-sm space-y-4">
+        <div>
+            <h4 class="font-semibold mb-2">Terms & Conditions</h4>
+            <p class="break-words line-clamp-4 whitespace-pre-line">{{ $document->terms }}</p>
+        </div>
+
+        @if(!empty($document->paymentDetails))
+            <div>
+                <h4 class="font-semibold mb-2">Payment Details</h4>
+                <dl class="space-y-1">
+                    @foreach($document->paymentDetails as $detail)
+                        <div class="flex items-start justify-between gap-4">
+                            <dt class="font-medium text-gray-600">{{ $detail->label }}</dt>
+                            <dd class="text-right break-words">{{ $detail->value }}</dd>
+                        </div>
+                    @endforeach
+                </dl>
+            </div>
+        @endif
     </x-company.document-template.footer>
 </x-company.document-template.container>

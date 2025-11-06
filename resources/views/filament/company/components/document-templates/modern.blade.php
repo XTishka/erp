@@ -139,9 +139,30 @@
             Terms & Conditions
         </h4>
         <span class="border-t-2 my-2 border-gray-300 block w-full"></span>
-        <div class="flex justify-between space-x-4 px-6 text-sm">
-            <p class="w-1/2 break-words line-clamp-4">{{ $document->terms }}</p>
-            <p class="w-1/2 break-words line-clamp-4">{{ $document->footer }}</p>
+        <div class="flex flex-col gap-4 px-6 text-sm md:flex-row md:space-x-6">
+            <div class="md:w-1/2">
+                <p class="break-words line-clamp-4 whitespace-pre-line">{{ $document->terms }}</p>
+            </div>
+
+            <div class="md:w-1/2 space-y-3">
+                @if(!empty($document->paymentDetails))
+                    <div>
+                        <h5 class="font-semibold text-gray-600">Payment Details</h5>
+                        <dl class="space-y-1">
+                            @foreach($document->paymentDetails as $detail)
+                                <div class="flex items-start justify-between gap-4">
+                                    <dt class="font-semibold text-gray-500">{{ $detail->label }}</dt>
+                                    <dd class="text-right break-words text-gray-900">{{ $detail->value }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    </div>
+                @endif
+
+                @if($document->footer)
+                    <p class="break-words line-clamp-4">{{ $document->footer }}</p>
+                @endif
+            </div>
         </div>
     </x-company.document-template.footer>
 </x-company.document-template.container>

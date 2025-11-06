@@ -25,6 +25,7 @@ readonly class DocumentPreviewDTO extends DocumentDTO
             subheader: $data['subheader'] ?? $settings->subheader,
             footer: $data['footer'] ?? $settings->footer,
             terms: $data['terms'] ?? $settings->terms,
+            paymentDetails: self::formatPaymentDetails($data['payment_details'] ?? $settings->payment_details),
             logo: $settings->logo_url,
             number: self::generatePreviewNumber($settings, $data),
             referenceNumber: $settings->getNumberNext('ORD-'),
