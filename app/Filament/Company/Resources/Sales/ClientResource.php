@@ -2,6 +2,7 @@
 
 namespace App\Filament\Company\Resources\Sales;
 
+use App\Filament\Company\Clusters\Settings\Resources\ClientTagResource;
 use App\Filament\Company\Resources\Sales\ClientResource\Pages;
 use App\Filament\Exports\Common\ClientExporter;
 use App\Filament\Forms\Components\AddressFields;
@@ -14,6 +15,7 @@ use App\Models\Common\Client;
 use App\Utilities\Currency\CurrencyConverter;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
@@ -74,7 +76,14 @@ class ClientResource extends Resource
                                             ->required(),
                                     ])
                                     ->createOptionAction(fn ($action) => $action->modalHeading('Create tag'))
-                                    ->editOptionAction(fn ($action) => $action->modalHeading('Edit tag')),
+                                    ->editOptionAction(fn ($action) => $action->modalHeading('Edit tag'))
+                                    ->hintAction(
+                                        Action::make('manageTags')
+                                            ->label('Manage tags')
+                                            ->icon('heroicon-o-arrow-top-right-on-square')
+                                            ->url(ClientTagResource::getUrl('index'))
+                                            ->openUrlInNewTab()
+                                    ),
                             ]),
                         CustomSection::make('Primary Contact')
                             ->relationship('primaryContact')
