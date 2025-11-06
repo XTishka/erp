@@ -9,6 +9,7 @@ use App\Models\Accounting\Estimate;
 use App\Models\Accounting\Invoice;
 use App\Models\Accounting\RecurringInvoice;
 use App\Models\Accounting\Transaction;
+use App\Models\Common\ClientCategory;
 use App\Models\Setting\Currency;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -29,6 +30,7 @@ class Client extends Model
 
     protected $fillable = [
         'company_id',
+        'client_category_id',
         'name',
         'currency_code',
         'account_number',
@@ -292,6 +294,11 @@ class Client extends Model
     public function recurringInvoices(): HasMany
     {
         return $this->hasMany(RecurringInvoice::class);
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ClientCategory::class, 'client_category_id');
     }
 
     /**
