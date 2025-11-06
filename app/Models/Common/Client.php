@@ -13,9 +13,11 @@ use App\Models\Setting\Currency;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Support\Arr;
 
 class Client extends Model
 {
@@ -38,6 +40,8 @@ class Client extends Model
 
     public static function createWithRelations(array $data): self
     {
+        $tagIds = Arr::pull($data, 'tags', []);
+
         /** @var Client $client */
         $client = self::create($data);
 
@@ -49,6 +53,10 @@ class Client extends Model
                 'email' => $data['primaryContact']['email'],
                 'phones' => $data['primaryContact']['phones'] ?? [],
             ]);
+        }
+
+        if (! empty($tagIds)) {
+            $client->tags()->sync($tagIds);
         }
 
         if (isset($data['secondaryContacts'])) {
@@ -121,6 +129,8 @@ class Client extends Model
 
     public function updateWithRelations(array $data): self
     {
+        $tagIds = Arr::pull($data, 'tags', null);
+
         $this->update($data);
 
         if (isset($data['primaryContact'], $data['primaryContact']['first_name'])) {
@@ -133,6 +143,10 @@ class Client extends Model
                     'phones' => $data['primaryContact']['phones'] ?? [],
                 ]
             );
+        }
+
+        if ($tagIds !== null) {
+            $this->tags()->sync($tagIds);
         }
 
         if (isset($data['secondaryContacts'])) {
@@ -278,5 +292,15 @@ class Client extends Model
     public function recurringInvoices(): HasMany
     {
         return $this->hasMany(RecurringInvoice::class);
+    }
+
+    /**
+     * @return BelongsToMany<ClientTag>
+     */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(ClientTag::class)
+            ->withTimestamps()
+            ->orderBy('name');
     }
 }

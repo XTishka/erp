@@ -19,6 +19,8 @@ use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\ViewColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 class ClientResource extends Resource
@@ -45,6 +47,34 @@ class ClientResource extends Resource
                                     ->maxLength(255),
                                 Forms\Components\Textarea::make('notes')
                                     ->columnSpanFull(),
+                                Forms\Components\Select::make('tags')
+                                    ->label('Tags')
+                                    ->relationship('tags', 'name')
+                                    ->multiple()
+                                    ->preload()
+                                    ->searchable()
+                                    ->helperText('Organize clients with colored tags.')
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\ColorPicker::make('color')
+                                            ->label('Color')
+                                            ->required()
+                                            ->default('#6366F1'),
+                                    ])
+                                    ->editOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\ColorPicker::make('color')
+                                            ->label('Color')
+                                            ->required(),
+                                    ])
+                                    ->createOptionAction(fn ($action) => $action->modalHeading('Create tag'))
+                                    ->editOptionAction(fn ($action) => $action->modalHeading('Edit tag')),
                             ]),
                         CustomSection::make('Primary Contact')
                             ->relationship('primaryContact')
@@ -248,12 +278,18 @@ class ClientResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(static fn (Builder $query) => $query->with('tags'))
             ->columns([
                 Columns::id(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->description(static fn (Client $client) => $client->primaryContact?->full_name),
+                ViewColumn::make('tags_list')
+                    ->label('Tags')
+                    ->state(fn (Client $client) => $client->tags)
+                    ->view('filament.company.components.tables.columns.client-tags')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('primaryContact.email')
                     ->label('Email')
                     ->searchable()
@@ -298,7 +334,13 @@ class ClientResource extends Resource
                     ->alignEnd(),
             ])
             ->filters([
-                //
+                SelectFilter::make('tag')
+                    ->label('Tag')
+                    ->relationship('tags', 'name')
+                    ->multiple(false)
+                    ->preload()
+                    ->searchable()
+                    ->indicator('Tag'),
             ])
             ->headerActions([
                 Tables\Actions\ExportAction::make()
