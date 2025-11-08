@@ -5,6 +5,7 @@ namespace App\Models\Accounting;
 use App\Concerns\Blamable;
 use App\Concerns\CompanyOwned;
 use App\Enums\Accounting\DocumentType;
+use App\Models\Setting\CompanyProfile;
 use App\Models\Setting\Currency;
 use Filament\Actions\Action;
 use Filament\Actions\MountableAction;
@@ -23,6 +24,11 @@ abstract class Document extends Model
     public function currency(): BelongsTo
     {
         return $this->belongsTo(Currency::class, 'currency_code', 'code');
+    }
+
+    public function companyProfile(): BelongsTo
+    {
+        return $this->belongsTo(CompanyProfile::class);
     }
 
     public function lineItems(): MorphMany

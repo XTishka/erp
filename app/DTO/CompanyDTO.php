@@ -3,6 +3,7 @@
 namespace App\DTO;
 
 use App\Models\Company;
+use App\Models\Setting\CompanyProfile;
 
 readonly class CompanyDTO
 {
@@ -16,9 +17,9 @@ readonly class CompanyDTO
         public string $country,
     ) {}
 
-    public static function fromModel(Company $company): self
+    public static function fromModel(Company $company, ?CompanyProfile $profile = null): self
     {
-        $profile = $company->profile;
+        $profile ??= $company->profile;
         $address = $profile->address ?? null;
 
         return new self(

@@ -68,6 +68,8 @@ readonly class DocumentDTO
             self::formatToMoney($document->amountDue(), $currencyCode) :
             null;
 
+        $profile = $document->companyProfile ?? $document->company->profile;
+
         return new self(
             header: $document->header,
             subheader: $document->subheader,
@@ -85,7 +87,7 @@ readonly class DocumentDTO
             tax: $tax,
             total: self::formatToMoney($document->total, $currencyCode),
             amountDue: $amountDue,
-            company: CompanyDTO::fromModel($document->company),
+            company: CompanyDTO::fromModel($document->company, $profile),
             client: $document->client ? ClientDTO::fromModel($document->client) : null,
             lineItems: $document->lineItems->map(fn ($item) => LineItemDTO::fromModel($item)),
             label: $document::documentType()->getLabels(),

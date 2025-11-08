@@ -18,7 +18,7 @@ class ClientTagResource extends Resource
 
     protected static ?string $cluster = Settings::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-tag';
+    // protected static ?string $navigationIcon = 'heroicon-o-tag';
 
     protected static ?int $navigationSort = 25;
 

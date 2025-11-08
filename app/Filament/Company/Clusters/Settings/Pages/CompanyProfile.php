@@ -2,6 +2,7 @@
 
 namespace App\Filament\Company\Clusters\Settings\Pages;
 
+use App\Enums\Common\AddressType;
 use App\Enums\Setting\EntityType;
 use App\Filament\Company\Clusters\Settings;
 use App\Filament\Forms\Components\AddressFields;
@@ -27,7 +28,11 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 use function Filament\authorize;
@@ -46,6 +51,11 @@ class CompanyProfile extends Page
     protected static ?string $cluster = Settings::class;
 
     public ?array $data = [];
+
+    #[Url(as: 'profile')]
+    public ?int $profileId = null;
+
+    protected bool $suppressProfileChange = false;
 
     #[Locked]
     public ?CompanyProfileModel $record = null;
@@ -67,13 +77,111 @@ class CompanyProfile extends Page
 
     public function mount(): void
     {
-        $this->record = CompanyProfileModel::firstOrNew([
-            'company_id' => auth()->user()->current_company_id,
-        ]);
+        $this->loadRecord($this->profileId);
 
         abort_unless(static::canView($this->record), 404);
+    }
+
+    public function updatedProfileId($profileId): void
+    {
+        if ($this->suppressProfileChange) {
+            return;
+        }
+
+        $profileId = filled($profileId) ? (int) $profileId : null;
+
+        if ($profileId === $this->record?->getKey()) {
+            return;
+        }
+
+        $this->loadRecord($profileId);
+    }
+
+    protected function loadRecord(?int $profileId = null): void
+    {
+        $this->record = $this->resolveRecord($profileId);
+
+        $this->ensureAddressExists($this->record);
+
+        $this->suppressProfileChange = true;
+        $this->profileId = $this->record->getKey();
+        $this->suppressProfileChange = false;
 
         $this->fillForm();
+    }
+
+    protected function resolveRecord(?int $profileId = null): CompanyProfileModel
+    {
+        $baseQuery = CompanyProfileModel::query();
+
+        if ($profileId) {
+            $record = (clone $baseQuery)->find($profileId);
+
+            if ($record) {
+                return $record;
+            }
+        }
+
+        $record = (clone $baseQuery)->where('is_default', true)->first()
+            ?? (clone $baseQuery)->first();
+
+        if ($record) {
+            return $record;
+        }
+
+        return CompanyProfileModel::create([
+            'company_id' => auth()->user()->current_company_id,
+            'name' => 'Default',
+        ]);
+    }
+
+    protected function ensureAddressExists(CompanyProfileModel $record): void
+    {
+        if ($record->address()->exists()) {
+            return;
+        }
+
+        $record->address()->create([
+            'type' => AddressType::General,
+        ]);
+    }
+
+    protected function copyAddressData(?CompanyProfileModel $source): array
+    {
+        if (! $source?->address) {
+            return [
+                'type' => AddressType::General,
+            ];
+        }
+
+        $address = $source->address;
+
+        return [
+            ...Arr::only($address->toArray(), [
+                'recipient',
+                'phone',
+                'address_line_1',
+                'address_line_2',
+                'city',
+                'state_id',
+                'postal_code',
+                'country_code',
+                'notes',
+            ]),
+            'type' => $address->type ?? AddressType::General,
+        ];
+    }
+
+    public function getProfileOptionsProperty(): array
+    {
+        return CompanyProfileModel::query()
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (CompanyProfileModel $profile) => [
+                $profile->getKey() => $profile->name . ($profile->is_default ? ' (Default)' : ''),
+            ])
+            ->all();
     }
 
     public function fillForm(): void
@@ -151,6 +259,16 @@ class CompanyProfile extends Page
             ->schema([
                 Group::make()
                     ->schema([
+                        TextInput::make('name')
+                            ->label('Profile name')
+                            ->maxLength(100)
+                            ->softRequired()
+                            ->unique(
+                                table: CompanyProfileModel::class,
+                                column: 'name',
+                                ignoreRecord: true,
+                                modifyRuleUsing: fn (Unique $rule) => $rule->where('company_id', auth()->user()->current_company_id),
+                            ),
                         TextInput::make('email')
                             ->email()
                             ->localizeLabel()
@@ -189,7 +307,7 @@ class CompanyProfile extends Page
             ->warning()
             ->title('Address information incomplete')
             ->description('Please complete the required address information for proper business operations.')
-            ->visible(fn (CompanyProfileModel $record) => $record->address->isIncomplete())
+            ->visible(fn (CompanyProfileModel $record) => (bool) $record->address?->isIncomplete())
             ->columnSpanFull();
     }
 
@@ -239,6 +357,85 @@ class CompanyProfile extends Page
         return $record;
     }
 
+    protected function createProfileFromAction(array $data): void
+    {
+        $source = ! empty($data['copy_from_id'])
+            ? CompanyProfileModel::query()->find($data['copy_from_id'])
+            : null;
+
+        $profile = CompanyProfileModel::create([
+            'company_id' => auth()->user()->current_company_id,
+            'name' => $data['name'],
+            'email' => $source?->email,
+            'phone_number' => $source?->phone_number,
+            'tax_id' => $source?->tax_id,
+            'entity_type' => $source?->entity_type,
+            'logo' => $source?->logo,
+        ]);
+
+        if ($source?->address) {
+            $profile->address()->create($this->copyAddressData($source));
+        } else {
+            $this->ensureAddressExists($profile);
+        }
+
+        $this->loadRecord($profile->getKey());
+
+        Notification::make()
+            ->success()
+            ->title('Profile created')
+            ->send();
+    }
+
+    protected function setCurrentProfileAsDefault(): void
+    {
+        if (! $this->record) {
+            return;
+        }
+
+        $this->record->is_default = true;
+        $this->record->save();
+
+        $this->loadRecord($this->record->getKey());
+
+        Notification::make()
+            ->success()
+            ->title('Default profile updated')
+            ->send();
+    }
+
+    protected function deleteCurrentProfile(): void
+    {
+        if (! $this->record) {
+            return;
+        }
+
+        $deletedDefault = $this->record->is_default;
+
+        $this->record->delete();
+
+        if ($deletedDefault) {
+            $replacement = CompanyProfileModel::query()->first();
+
+            if ($replacement && ! $replacement->is_default) {
+                $replacement->is_default = true;
+                $replacement->save();
+            }
+        }
+
+        $this->loadRecord();
+
+        Notification::make()
+            ->success()
+            ->title('Profile deleted')
+            ->send();
+    }
+
+    protected function canDeleteCurrentProfile(): bool
+    {
+        return CompanyProfileModel::query()->count() > 1;
+    }
+
     /**
      * @return array<Action | ActionGroup>
      */
@@ -246,6 +443,43 @@ class CompanyProfile extends Page
     {
         return [
             $this->getSaveFormAction(),
+        ];
+    }
+
+    /**
+     * @return array<Action | ActionGroup>
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('createProfile')
+                ->label('New profile')
+                ->icon('heroicon-m-plus')
+                ->form([
+                    TextInput::make('name')
+                        ->label('Profile name')
+                        ->required()
+                        ->maxLength(100),
+                    Select::make('copy_from_id')
+                        ->label('Copy from')
+                        ->options($this->profileOptions)
+                        ->searchable()
+                        ->placeholder('Start from scratch')
+                        ->native(false),
+                ])
+                ->action(fn (array $data) => $this->createProfileFromAction($data)),
+            Action::make('setDefaultProfile')
+                ->label('Set as default')
+                ->icon('heroicon-m-star')
+                ->visible(fn () => $this->record?->is_default === false)
+                ->action(fn () => $this->setCurrentProfileAsDefault()),
+            Action::make('deleteProfile')
+                ->label('Delete profile')
+                ->icon('heroicon-m-trash')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->visible(fn () => $this->canDeleteCurrentProfile())
+                ->action(fn () => $this->deleteCurrentProfile()),
         ];
     }
 
