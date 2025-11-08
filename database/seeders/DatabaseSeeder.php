@@ -14,5 +14,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserCompanySeeder::class,
         ]);
+
+        if (app()->environment('local')) {
+            $this->call([
+                LocalDeveloperSeeder::class,
+                LocalCompanySeeder::class,
+            ]);
+        }
     }
 }

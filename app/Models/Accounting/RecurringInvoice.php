@@ -20,7 +20,6 @@ use App\Filament\Company\Resources\Sales\RecurringInvoiceResource\Pages\ViewRecu
 use App\Filament\Forms\Components\Banner;
 use App\Filament\Forms\Components\CustomSection;
 use App\Models\Common\Client;
-use App\Models\Setting\CompanyProfile;
 use App\Observers\RecurringInvoiceObserver;
 use App\Support\ScheduleHandler;
 use App\Utilities\Localization\Timezone;
@@ -48,6 +47,7 @@ class RecurringInvoice extends Document
 
     protected $fillable = [
         'company_id',
+        'company_profile_id',
         'client_id',
         'logo',
         'header',
@@ -551,7 +551,7 @@ class RecurringInvoice extends Document
                         }),
 
                         Forms\Components\Select::make('timezone')
-                            ->options(Timezone::getTimezoneOptions(CompanyProfile::first()->country))
+                            ->options(Timezone::getTimezoneOptions(auth()->user()?->currentCompany?->profile?->address?->country_code ?? 'US'))
                             ->searchable()
                             ->softRequired(),
                     ])
@@ -627,6 +627,9 @@ class RecurringInvoice extends Document
 
         $invoice = $this->invoices()->create([
             'company_id' => $this->company_id,
+            'company_profile_id' => $this->company_profile_id
+                ?? $this->company?->defaultInvoice?->company_profile_id
+                ?? $this->company?->profile?->getKey(),
             'client_id' => $this->client_id,
             'logo' => $this->logo,
             'header' => $this->header,

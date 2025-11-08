@@ -37,6 +37,7 @@ class Estimate extends Document
 {
     protected $fillable = [
         'company_id',
+        'company_profile_id',
         'client_id',
         'logo',
         'header',
@@ -455,6 +456,9 @@ class Estimate extends Document
 
         $invoice = $this->invoice()->create([
             'company_id' => $this->company_id,
+            'company_profile_id' => $this->company_profile_id
+                ?? $this->company?->defaultInvoice?->company_profile_id
+                ?? $this->company?->profile?->getKey(),
             'client_id' => $this->client_id,
             'logo' => $this->logo,
             'header' => $this->company->defaultInvoice->header,

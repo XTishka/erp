@@ -38,6 +38,7 @@ class Bill extends Document
 
     protected $fillable = [
         'company_id',
+        'company_profile_id',
         'vendor_id',
         'bill_number',
         'order_number',

@@ -18,7 +18,7 @@ class ClientCategoryResource extends Resource
 
     protected static ?string $cluster = Settings::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-ellipsis-vertical';
+    // protected static ?string $navigationIcon = 'heroicon-o-ellipsis-vertical';
 
     protected static ?int $navigationSort = 24;
 

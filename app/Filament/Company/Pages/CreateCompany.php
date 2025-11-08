@@ -105,8 +105,10 @@ class CreateCompany extends FilamentCreateCompany
             ]);
 
             $profile = $company->profile()->create([
+                'name' => 'Default',
                 'email' => $data['profile']['email'],
                 'entity_type' => $data['profile']['entity_type'],
+                'is_default' => true,
             ]);
 
             $profile->address()->create([

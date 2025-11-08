@@ -43,6 +43,30 @@ class CompanyFactory extends Factory
     {
         return $this->afterCreating(function (Company $company) use ($countryCode) {
             CompanyProfile::factory()
+                ->defaultProfile()
+                ->forCompany($company)
+                ->withAddress($countryCode)
+                ->create();
+        });
+    }
+
+    public function withAdditionalProfiles(int $count = 1, ?string $countryCode = null): self
+    {
+        return $this->afterCreating(function (Company $company) use ($count, $countryCode) {
+            if ($count <= 0) {
+                return;
+            }
+
+            if (! $company->profile) {
+                CompanyProfile::factory()
+                    ->defaultProfile()
+                    ->forCompany($company)
+                    ->withAddress($countryCode)
+                    ->create();
+            }
+
+            CompanyProfile::factory()
+                ->count($count)
                 ->forCompany($company)
                 ->withAddress($countryCode)
                 ->create();

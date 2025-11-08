@@ -49,6 +49,18 @@ class DocumentDefaultResource extends Resource
                 Forms\Components\TextInput::make('number_prefix')
                     ->localizeLabel()
                     ->nullable(),
+                Forms\Components\Select::make('company_profile_id')
+                    ->label('Company profile')
+                    ->relationship(
+                        'companyProfile',
+                        'name',
+                        fn ($query) => $query->orderByDesc('is_default')->orderBy('name'),
+                    )
+                    ->default(fn () => auth()->user()?->currentCompany?->profile?->id)
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->native(false),
                 Forms\Components\Select::make('payment_terms')
                     ->softRequired()
                     ->localizeLabel()
