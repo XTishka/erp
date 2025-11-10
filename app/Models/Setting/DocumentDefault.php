@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentDefault extends Model
@@ -29,6 +30,7 @@ class DocumentDefault extends Model
 
     protected $fillable = [
         'company_id',
+        'company_profile_id',
         'type',
         'logo',
         'show_logo',
@@ -38,6 +40,7 @@ class DocumentDefault extends Model
         'header',
         'subheader',
         'terms',
+        'payment_details',
         'footer',
         'accent_color',
         'font',
@@ -61,6 +64,7 @@ class DocumentDefault extends Model
         'unit_name' => AsArrayObject::class,
         'price_name' => AsArrayObject::class,
         'amount_name' => AsArrayObject::class,
+        'payment_details' => AsArrayObject::class,
     ];
 
     protected $appends = [
@@ -72,6 +76,11 @@ class DocumentDefault extends Model
         return Attribute::get(static function (mixed $value, array $attributes): ?string {
             return $attributes['logo'] ? Storage::disk('public')->url($attributes['logo']) : null;
         });
+    }
+
+    public function companyProfile(): BelongsTo
+    {
+        return $this->belongsTo(CompanyProfile::class);
     }
 
     #[Scope]

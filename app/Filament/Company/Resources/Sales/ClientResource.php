@@ -2,6 +2,8 @@
 
 namespace App\Filament\Company\Resources\Sales;
 
+use App\Filament\Company\Clusters\Settings\Resources\ClientCategoryResource;
+use App\Filament\Company\Clusters\Settings\Resources\ClientTagResource;
 use App\Filament\Company\Resources\Sales\ClientResource\Pages;
 use App\Filament\Exports\Common\ClientExporter;
 use App\Filament\Forms\Components\AddressFields;
@@ -14,11 +16,14 @@ use App\Models\Common\Client;
 use App\Utilities\Currency\CurrencyConverter;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\ViewColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Illuminate\Database\Eloquent\Builder;
 
 class ClientResource extends Resource
@@ -45,6 +50,75 @@ class ClientResource extends Resource
                                     ->maxLength(255),
                                 Forms\Components\Textarea::make('notes')
                                     ->columnSpanFull(),
+                                Forms\Components\Select::make('client_category_id')
+                                    ->label('Category')
+                                    ->relationship('category', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->helperText('Assign a single category to this client.')
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\ColorPicker::make('color')
+                                            ->label('Color')
+                                            ->required()
+                                            ->default('#0EA5E9'),
+                                    ])
+                                    ->editOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\ColorPicker::make('color')
+                                            ->label('Color')
+                                            ->required(),
+                                    ])
+                                    ->createOptionAction(fn ($action) => $action->modalHeading('Create category'))
+                                    ->editOptionAction(fn ($action) => $action->modalHeading('Edit category'))
+                                    ->hintAction(
+                                        Action::make('manageCategories')
+                                            ->label('Manage categories')
+                                            ->icon('heroicon-o-arrow-top-right-on-square')
+                                            ->url(ClientCategoryResource::getUrl('index'))
+                                            ->openUrlInNewTab()
+                                    ),
+                                Forms\Components\Select::make('tags')
+                                    ->label('Tags')
+                                    ->relationship('tags', 'name')
+                                    ->multiple()
+                                    ->preload()
+                                    ->searchable()
+                                    ->helperText('Organize clients with colored tags.')
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\ColorPicker::make('color')
+                                            ->label('Color')
+                                            ->required()
+                                            ->default('#6366F1'),
+                                    ])
+                                    ->editOptionForm([
+                                        Forms\Components\TextInput::make('name')
+                                            ->label('Name')
+                                            ->required()
+                                            ->maxLength(255),
+                                        Forms\Components\ColorPicker::make('color')
+                                            ->label('Color')
+                                            ->required(),
+                                    ])
+                                    ->createOptionAction(fn ($action) => $action->modalHeading('Create tag'))
+                                    ->editOptionAction(fn ($action) => $action->modalHeading('Edit tag'))
+                                    ->hintAction(
+                                        Action::make('manageTags')
+                                            ->label('Manage tags')
+                                            ->icon('heroicon-o-arrow-top-right-on-square')
+                                            ->url(ClientTagResource::getUrl('index'))
+                                            ->openUrlInNewTab()
+                                    ),
                             ]),
                         CustomSection::make('Primary Contact')
                             ->relationship('primaryContact')
@@ -248,12 +322,23 @@ class ClientResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(static fn (Builder $query) => $query->with(['tags', 'category']))
             ->columns([
                 Columns::id(),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable()
                     ->description(static fn (Client $client) => $client->primaryContact?->full_name),
+                ViewColumn::make('category_badge')
+                    ->label('Category')
+                    ->state(fn (Client $client) => $client->category)
+                    ->view('filament.company.components.tables.columns.client-category')
+                    ->toggleable(),
+                ViewColumn::make('tags_list')
+                    ->label('Tags')
+                    ->state(fn (Client $client) => $client->tags)
+                    ->view('filament.company.components.tables.columns.client-tags')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('primaryContact.email')
                     ->label('Email')
                     ->searchable()
@@ -298,7 +383,19 @@ class ClientResource extends Resource
                     ->alignEnd(),
             ])
             ->filters([
-                //
+                SelectFilter::make('category')
+                    ->label('Category')
+                    ->relationship('category', 'name')
+                    ->preload()
+                    ->searchable()
+                    ->indicator('Category'),
+                SelectFilter::make('tag')
+                    ->label('Tag')
+                    ->relationship('tags', 'name')
+                    ->multiple(false)
+                    ->preload()
+                    ->searchable()
+                    ->indicator('Tag'),
             ])
             ->headerActions([
                 Tables\Actions\ExportAction::make()

@@ -132,10 +132,26 @@
     </x-company.document-template.line-items>
 
     <!-- Footer Notes -->
-    <x-company.document-template.footer class="default-template-footer flex flex-col text-sm p-6">
-        <div>
-            <h4 class="font-semibold mb-2">Terms & Conditions</h4>
-            <p class="break-words line-clamp-4">{{ $document->terms }}</p>
+    <x-company.document-template.footer class="default-template-footer flex flex-col text-sm p-6 space-y-6">
+        <div class="grid gap-6 md:grid-cols-2">
+            <div>
+                <h4 class="font-semibold mb-2">Terms & Conditions</h4>
+                <p class="break-words line-clamp-4 whitespace-pre-line">{{ $document->terms }}</p>
+            </div>
+
+            @if(!empty($document->paymentDetails))
+                <div>
+                    <h4 class="font-semibold mb-2">Payment Details</h4>
+                    <dl class="space-y-1">
+                        @foreach($document->paymentDetails as $detail)
+                            <div class="flex items-start justify-between gap-4">
+                                <dt class="font-medium text-gray-600">{{ $detail->label }}</dt>
+                                <dd class="text-right break-words">{{ $detail->value }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </div>
+            @endif
         </div>
 
         @if($document->footer)

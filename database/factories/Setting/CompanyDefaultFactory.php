@@ -68,20 +68,25 @@ class CompanyDefaultFactory extends Factory
 
     private function createDocumentDefaults(Company $company, User $user): void
     {
+        $defaultProfileId = $company->profile?->id;
+
         DocumentDefault::factory()->invoice()->createQuietly([
             'company_id' => $company->id,
+            'company_profile_id' => $defaultProfileId,
             'created_by' => $user->id,
             'updated_by' => $user->id,
         ]);
 
         DocumentDefault::factory()->bill()->createQuietly([
             'company_id' => $company->id,
+            'company_profile_id' => $defaultProfileId,
             'created_by' => $user->id,
             'updated_by' => $user->id,
         ]);
 
         DocumentDefault::factory()->estimate()->createQuietly([
             'company_id' => $company->id,
+            'company_profile_id' => $defaultProfileId,
             'created_by' => $user->id,
             'updated_by' => $user->id,
         ]);

@@ -5,6 +5,7 @@ namespace Database\Factories\Setting;
 use App\Enums\Accounting\DocumentType;
 use App\Enums\Setting\Font;
 use App\Enums\Setting\Template;
+use App\Models\Company;
 use App\Models\Setting\DocumentDefault;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -29,7 +30,11 @@ class DocumentDefaultFactory extends Factory
     {
         return [
             'company_id' => 1,
+            'company_profile_id' => function (array $attributes) {
+                return Company::find($attributes['company_id'])->profile?->id;
+            },
             'payment_terms' => 'due_upon_receipt',
+            'payment_details' => null,
         ];
     }
 

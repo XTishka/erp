@@ -188,9 +188,18 @@ class Company extends FilamentCompaniesCompany implements HasAvatar
         return $this->hasOne(Localization::class, 'company_id');
     }
 
+    public function profiles(): HasMany
+    {
+        return $this->hasMany(CompanyProfile::class, 'company_id');
+    }
+
     public function profile(): HasOne
     {
-        return $this->hasOne(CompanyProfile::class, 'company_id');
+        return $this->hasOne(CompanyProfile::class, 'company_id')
+            ->ofMany([
+                'is_default' => 'max',
+                'id' => 'max',
+            ]);
     }
 
     public function transactions(): HasMany

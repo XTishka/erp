@@ -27,9 +27,11 @@ class CompanyProfileFactory extends Factory
     public function definition(): array
     {
         return [
+            'name' => $this->faker->company . ' Profile',
             'phone_number' => $this->faker->phoneNumber,
             'email' => $this->faker->email,
             'entity_type' => $this->faker->randomElement(EntityType::class),
+            'is_default' => false,
         ];
     }
 
@@ -39,6 +41,13 @@ class CompanyProfileFactory extends Factory
             'company_id' => $company->id,
             'created_by' => $company->owner->id,
             'updated_by' => $company->owner->id,
+        ]);
+    }
+
+    public function defaultProfile(): self
+    {
+        return $this->state([
+            'is_default' => true,
         ]);
     }
 

@@ -7,7 +7,6 @@ use App\Enums\Setting\NumberFormat;
 use App\Enums\Setting\TimeFormat;
 use App\Enums\Setting\WeekStart;
 use App\Filament\Company\Clusters\Settings;
-use App\Models\Setting\CompanyProfile as CompanyProfileModel;
 use App\Models\Setting\Localization as LocalizationModel;
 use App\Services\CompanySettingsService;
 use App\Utilities\Localization\Timezone;
@@ -131,7 +130,7 @@ class Localization extends Page
                 Select::make('timezone')
                     ->softRequired()
                     ->localizeLabel()
-                    ->options(Timezone::getTimezoneOptions(CompanyProfileModel::first()->address->country_code))
+                    ->options(Timezone::getTimezoneOptions($this->getDefaultProfileCountryCode() ?? 'US'))
                     ->searchable(),
             ])->columns();
     }
@@ -154,6 +153,11 @@ class Localization extends Page
                     ->localizeLabel()
                     ->options(WeekStart::class),
             ])->columns();
+    }
+
+    protected function getDefaultProfileCountryCode(): ?string
+    {
+        return auth()->user()?->currentCompany?->profile?->address?->country_code;
     }
 
     protected function getFinancialAndFiscalSection(): Component

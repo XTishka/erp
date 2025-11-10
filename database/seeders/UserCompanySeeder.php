@@ -21,6 +21,7 @@ class UserCompanySeeder extends Seeder
                     ->state([
                         'name' => 'ERPSAAS',
                     ])
+                    ->withAdditionalProfiles(2)
                     ->withTransactions(250)
                     ->withOfferings()
                     ->withClients()
@@ -51,6 +52,7 @@ class UserCompanySeeder extends Seeder
                     'personal_company' => false,
                 ])
                 ->withCompanyProfile($companyData['country'])
+                ->withAdditionalProfiles(2, $companyData['country'])
                 ->withCompanyDefaults($companyData['currency'], $companyData['locale'])
                 ->withTransactions(50)
                 ->withOfferings()

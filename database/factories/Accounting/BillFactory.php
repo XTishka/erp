@@ -37,6 +37,9 @@ class BillFactory extends Factory
 
         return [
             'company_id' => 1,
+            'company_profile_id' => function (array $attributes) {
+                return Company::find($attributes['company_id'])->profile?->id;
+            },
             'vendor_id' => function (array $attributes) {
                 return Vendor::where('company_id', $attributes['company_id'])->inRandomOrder()->value('id')
                     ?? Vendor::factory()->state([

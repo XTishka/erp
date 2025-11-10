@@ -80,6 +80,18 @@ class EstimateResource extends Resource
                                         }
                                     }),
                                 CreateCurrencySelect::make('currency_code'),
+                                Forms\Components\Select::make('company_profile_id')
+                                    ->label('Company profile')
+                                    ->relationship(
+                                        'companyProfile',
+                                        'name',
+                                        fn ($query) => $query->orderByDesc('is_default')->orderBy('name'),
+                                    )
+                                    ->default($settings->company_profile_id ?? $company->profile?->id)
+                                    ->required()
+                                    ->searchable()
+                                    ->preload()
+                                    ->native(false),
                             ]),
                             Forms\Components\Group::make([
                                 Forms\Components\TextInput::make('estimate_number')

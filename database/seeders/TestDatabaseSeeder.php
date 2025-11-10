@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Database\Factories\CompanyFactory;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,7 +14,7 @@ class TestDatabaseSeeder extends Seeder
     public function run(): void
     {
         User::factory()
-            ->withPersonalCompany()
+            ->withPersonalCompany(fn (CompanyFactory $factory) => $factory->withAdditionalProfiles())
             ->create([
                 'name' => 'Test Company Owner',
                 'email' => 'test@gmail.com',
